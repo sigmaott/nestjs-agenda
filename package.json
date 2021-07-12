@@ -10,15 +10,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/hanFengSan/nestjs-agenda.git"
+    "url": "git+ssh://git@github.com:SigmaOTT/nestjs-agenda.git"
   },
   "keywords": [
     "nestjs",
     "agenda"
   ],
-  "author": "Anh Luu",
+  "author": "Alex Chen, Anh Luu",
   "license": "MIT",
-  "homepage": "https://github.com/hanFengSan/nestjs-agenda#readme",
+  "homepage": "https://github.com/SigmaOTT/nestjs-agenda#readme",
   "dependencies": {
     "@golevelup/nestjs-common": "^1.4.2",
     "@golevelup/nestjs-discovery": "^2.3.1",
