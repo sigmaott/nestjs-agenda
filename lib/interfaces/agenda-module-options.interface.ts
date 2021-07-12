@@ -1,7 +1,9 @@
 import { ModuleMetadata, Type } from '@nestjs/common/interfaces';
-import * as Agenda from 'agenda';
+import { AgendaConfig, DefineOptions, JobPriority } from 'agenda';
 
-export interface AgendaModuleOptions extends Agenda.AgendaConfiguration {}
+export type AgendaModuleOptions = AgendaConfig;
+
+export type AgendaDefineOptions = DefineOptions & { name: string };
 
 export interface AgendaOptionsFactory {
   createAgendaOptions(): Promise<AgendaModuleOptions> | AgendaModuleOptions;
@@ -13,3 +15,5 @@ export interface AgendaModuleAsyncOptions extends Pick<ModuleMetadata, 'imports'
   useFactory?: (...args: any[]) => Promise<AgendaModuleOptions> | AgendaModuleOptions;
   inject?: any[];
 }
+
+export const AgendaJobJobPriority = { ...JobPriority };

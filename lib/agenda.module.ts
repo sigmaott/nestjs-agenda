@@ -1,15 +1,16 @@
-import { Module, DynamicModule, Provider, Inject } from '@nestjs/common';
-import { AgendaModuleOptions, AgendaModuleAsyncOptions, AgendaOptionsFactory } from './interfaces';
-import { AGENDA_MODULE_OPTIONS } from './agenda.constants';
-import * as Agenda from 'agenda';
-
-function createAgendaProvider(options: AgendaModuleOptions): any[] {
-  return [{ provide: AGENDA_MODULE_OPTIONS, useValue: options || {} }];
-}
+import { Module, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import { AgendaDefineOptions, AgendaModuleOptions } from './interfaces';
+import { AGENDA_HANDLER, AGENDA_MODULE_OPTIONS } from './agenda.constants';
+import { Agenda } from 'agenda';
+import { DiscoveryModule, DiscoveryService } from '@golevelup/nestjs-discovery';
+import { createConfigurableDynamicRootModule } from '@golevelup/nestjs-modules';
+import { ExternalContextCreator } from '@nestjs/core/helpers/external-context-creator';
+import { groupBy } from 'lodash';
 
 export class AgendaService extends Agenda {}
 
 @Module({
+  imports: [DiscoveryModule],
   providers: [
     {
       provide: AgendaService,
@@ -23,51 +24,60 @@ export class AgendaService extends Agenda {}
   ],
   exports: [AgendaService],
 })
-export class AgendaModule {
-  static register(options: AgendaModuleOptions): DynamicModule {
-    return {
-      module: AgendaModule,
-      providers: createAgendaProvider(options),
-    };
-  }
-
-  static registerAsync(options: AgendaModuleAsyncOptions): DynamicModule {
-    return {
-      module: AgendaModule,
-      imports: options.imports || [],
-      providers: this.createAsyncProviders(options),
-    };
-  }
-
-  private static createAsyncProviders(options: AgendaModuleAsyncOptions): Provider[] {
-    if (options.useExisting || options.useFactory) {
-      return [this.createAsyncOptionsProvider(options)];
-    }
-    return [
-      this.createAsyncOptionsProvider(options),
+export class AgendaModule
+  extends createConfigurableDynamicRootModule<AgendaModule, AgendaModuleOptions>(AGENDA_MODULE_OPTIONS, {
+    providers: [
       {
-        provide: options.useClass,
-        useClass: options.useClass,
+        provide: AgendaService,
+        useFactory: async (options) => {
+          const agenda = new Agenda(options);
+          await agenda.start();
+          return agenda;
+        },
+        inject: [AGENDA_MODULE_OPTIONS],
       },
-    ];
+    ],
+    exports: [AgendaService],
+  })
+  implements OnModuleInit, OnModuleDestroy
+{
+  private readonly logger = new Logger(AgendaModule.name);
+
+  constructor(
+    private readonly discover: DiscoveryService,
+    private readonly agenda: AgendaService,
+    private readonly externalContextCreator: ExternalContextCreator,
+  ) {
+    super();
   }
 
-  private static createAsyncOptionsProvider(
-    options: AgendaModuleAsyncOptions,
-  ): Provider {
-    if (options.useFactory) {
-      return {
-        provide: AGENDA_MODULE_OPTIONS,
-        useFactory: options.useFactory,
-        inject: options.inject || [],
-      };
+  async onModuleInit() {
+    this.logger.log('Initializing RabbitMQ Handlers');
+
+    const rabbitMeta = await this.discover.providerMethodsWithMetaAtKey<AgendaDefineOptions>(AGENDA_HANDLER);
+
+    const grouped = groupBy(rabbitMeta, (x) => x.discoveredMethod.parentClass.name);
+
+    const providerKeys = Object.keys(grouped);
+
+    for (const key of providerKeys) {
+      this.logger.log(`Registering rabbitmq handlers from ${key}`);
+      await Promise.all(
+        grouped[key].map(async ({ discoveredMethod, meta: config }) => {
+          const handler = this.externalContextCreator.create(
+            discoveredMethod.parentClass.instance,
+            discoveredMethod.handler,
+            discoveredMethod.methodName,
+          );
+
+          this.agenda.define(config.name, config, handler);
+        }),
+      );
     }
-    return {
-      provide: AGENDA_MODULE_OPTIONS,
-      // tslint:disable-next-line:max-line-length
-      useFactory: async (optionsFactory: AgendaOptionsFactory) => await optionsFactory.createAgendaOptions(),
-      inject: [options.useExisting || options.useClass],
-    };
   }
 
+  onModuleDestroy() {
+    this.logger.log('disconnect agenda');
+    this.agenda.close({ force: true });
+  }
 }
