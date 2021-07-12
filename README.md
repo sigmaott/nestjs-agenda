@@ -1,5 +1,6 @@
 # nestjs-agenda
 
+This repo base on [nestjs-agenda](https://github.com/hanFengSan/nestjs-agenda) and wrap decorator agenda job defined
 [Agenda](https://github.com/agenda/agenda) module for [Nestjs](https://github.com/nestjs/nest)
 
 Agenda version is `^4.1.3`
@@ -7,22 +8,24 @@ Agenda version is `^4.1.3`
 # Installation
 
 ```
-npm install nestjs-agenda
+npm i @sigmaott/nestjs-agenda
 ```
 
-# Usage
+# Dependencies
 
-Thank for
+Thank for @golevelup build the easy way to implement Dynamic Module and Discovery Module
+
+# Usage
 
 **1. Import `AgendaModule`:**
 
 _Sync register_:
 
 ```TypeScript
-import { AgendaModule } from 'nestjs-agenda';
+import { AgendaModule } from '@sigmaott/nestjs-agenda';
 
 @Module({
-  imports: [AgendaModule.forRoot({ db: { address: 'mongodb://xxxxx' }})], // Same as configuring an agenda
+  imports: [AgendaModule.forRoot(AgendaModule, { db: { address: 'mongodb://xxxxx' }})], // Same as configuring an agenda
   providers: [...],
 })
 export class FooModule {}
@@ -31,7 +34,7 @@ export class FooModule {}
 _Async register_:
 
 ```TypeScript
-import { AgendaModule } from 'nestjs-agenda';
+import { AgendaModule } from '@sigmaott/nestjs-agenda';
 
 @Module({
   imports: [
@@ -52,7 +55,7 @@ export class FooModule {}
 
 ```TypeScript
 import { Injectable } from '@nestjs/common';
-import { AgendaService } from 'nestjs-agenda';
+import { AgendaService } from '@sigmaott/nestjs-agenda;
 
 @Injectable()
 export class FooService {

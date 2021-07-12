@@ -1,6 +1,6 @@
 {
   "name": "@sigmaott/nestjs-agenda",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "agenda for nest.js",
   "main": "dist/index.js",
   "scripts": {
