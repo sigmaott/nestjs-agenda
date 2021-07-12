@@ -70,7 +70,13 @@ export class AgendaModule
             discoveredMethod.methodName,
           );
 
-          this.agenda.define(config.name, config, handler);
+          const argsLength = discoveredMethod.handler.length;
+          // agenda count argument length to detect done callback function => need to wrap handler by function has exactly argument length
+          this.agenda.define(
+            config.name,
+            config,
+            argsLength === 2 ? (arg1, arg2) => handler(arg1, arg2) : (arg1) => handler(arg1),
+          );
         }),
       );
     }
