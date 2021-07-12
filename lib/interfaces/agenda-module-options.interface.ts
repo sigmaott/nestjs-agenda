@@ -16,4 +16,4 @@ export interface AgendaModuleAsyncOptions extends Pick<ModuleMetadata, 'imports'
   inject?: any[];
 }
 
-export const AgendaJobJobPriority = { ...JobPriority };
+export const AgendaJobPriority = { ...JobPriority };
